@@ -29,22 +29,25 @@ eval_data = data["eval"]
 test_data = data["test"]
 
 train_dataset = Dataset.from_dict({
-    "anchor": train_data.anchors,
-    "positive/negative": train_data.pos_neg,
-    "label": train_data.labels,
+    "anchor": list(map(str, train_data.anchors)), 
+    "positive/negative": list(map(str, train_data.pos_neg)),
+    "label": list(map(int, train_data.labels)),
 })
 
 test_dataset = Dataset.from_dict({
-    "anchor": test_data.anchors,
-    "positive/negative": test_data.pos_neg,
-    "label": test_data.labels,
+    "anchor": list(map(str, test_data.anchors)), 
+    "positive/negative": list(map(str, test_data.pos_neg)),
+    "label": list(map(int, test_data.labels)),
 })
 
 eval_dataset = Dataset.from_dict({
-    "anchor": eval_data.anchors,
-    "positive/negative": eval_data.pos_neg,
-    "label": eval_data.labels,
+    "anchor": list(map(str, eval_data.anchors)), 
+    "positive/negative": list(map(str, eval_data.pos_neg)),
+    "label": list(map(int, eval_data.labels)),
 })
+
+if len(train_dataset) == 0 or len(eval_dataset) == 0 or len(test_dataset) == 0:
+    raise ValueError("One of the datasets is empty. Check your data loading and splitting logic.")
 
 # 4. Define a loss function
 loss = OnlineContrastiveLoss(model)
@@ -74,9 +77,9 @@ args = SentenceTransformerTrainingArguments(
 
 # 6. (Optional) Create an evaluator & evaluate the base model
 dev_evaluator = BinaryClassificationEvaluator(
-    sentences1=eval_dataset["anchor"],
-    sentences2=eval_dataset["positive/negative"],
-    labels=eval_dataset["label"],
+    sentences1=list(eval_dataset["anchor"]),
+    sentences2=list(eval_dataset["positive/negative"]), 
+    labels=list(eval_dataset["label"]),
 )
 dev_evaluator(model)
 
@@ -93,9 +96,9 @@ trainer.train()
 
 # Initialize the evaluator
 test_evaluator = BinaryClassificationEvaluator(
-    sentences1=test_dataset["anchor"],
-    sentences2=test_dataset["positive/negative"],
-    labels=test_dataset["label"],
+    sentences1=list(test_dataset["anchor"]),
+    sentences2=list(test_dataset["positive/negative"]), 
+    labels=list(test_dataset["label"]),
 )
 test_evaluator(model)
 

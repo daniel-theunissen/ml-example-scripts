@@ -3,9 +3,9 @@ import random
 
 class SimpleDataset:
     def __init__(self, anchors, pos_neg, labels):
-        self.anchors = anchors
-        self.pos_neg = pos_neg
-        self.labels = labels
+        self.anchors = list(anchors)  
+        self.pos_neg = list(pos_neg)  
+        self.labels = list(labels) 
 
     def select(self, indices):
         """Select a subset of the dataset based on the provided indices."""
@@ -36,7 +36,8 @@ class FirebaseDataset:
 
     def train_test_eval_split(self, train_ratio, test_ratio, eval_ratio):
         """Load data and split the dataset into train, test, and eval sets."""
-        if train_ratio + test_ratio + eval_ratio != 1.0:
+        total_ratio = train_ratio + test_ratio + eval_ratio
+        if not (0.99 <= total_ratio <= 1.01):
             raise ValueError("Ratios must sum to 1.0")
 
         # Load the data
