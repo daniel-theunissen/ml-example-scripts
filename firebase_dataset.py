@@ -84,17 +84,11 @@ class FirebaseDataset:
             return self.eval_data
         else:
             raise KeyError(f"Invalid key: {key}")
-
-# # Example usage
-# if __name__ == "__main__":
-#     # Specify the path to your JSON file
-#     file_path = 'path/to/your/data.json'  # Update this to your actual file path
-    
-#     # Create an instance of FirebaseDataset with specified ratios
-#     dataset = FirebaseDataset(file_path, train_ratio=0.7, test_ratio=0.2, eval_ratio=0.1)
-    
-#     # Accessing the training dataset and selecting the first 100,000 entries
-#     train_dataset = dataset["train"].select(range(100_000))
-#     print("Training Anchors:", train_dataset.anchors)
-#     print("Training Pos/Neg:", train_dataset.pos_neg)
-#     print("Training Labels:", train_dataset.labels)
+        
+    @property
+    def size(self):
+        """Return the total number of data points across all datasets."""
+        train_count = len(self.train_data.anchors) if self.train_data else 0
+        test_count = len(self.test_data.anchors) if self.test_data else 0
+        eval_count = len(self.eval_data.anchors) if self.eval_data else 0
+        return train_count + test_count + eval_count
