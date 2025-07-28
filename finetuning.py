@@ -9,30 +9,9 @@ from sentence_transformers import (
 from sentence_transformers.losses import OnlineContrastiveLoss
 from sentence_transformers.training_args import BatchSamplers
 from sentence_transformers.evaluation import BinaryClassificationEvaluator
-
-from firebase_dataset import FirebaseDataset
-
 from transformers import TrainerCallback
 
-train_losses = []
-eval_losses = []
-epochs = []
-# Custom logging callback
-class CustomLoggingCallback(TrainerCallback):
-    def on_log(self, args, state, control, logs=None, **kwargs):
-        if logs is not None:
-            epoch = logs.get('epoch')
-            if epoch not in epochs:
-                epochs.append(epoch)
-            # print(f"Step: {state.global_step}, Logs: {logs}")  # Print all logs
-            loss = logs.get('loss')
-            if loss is not None:
-                train_losses.append(loss)
-            
-            eval_loss = logs.get('eval_loss')
-            if eval_loss is not None:
-                eval_losses.append(eval_loss)
-            # print(f"Training Loss: {loss}, Evaluation Loss: {eval_loss}")
+from firebase_dataset import FirebaseDataset
 
 # 1. Load a model to finetune with 2. (Optional) model card data
 model = SentenceTransformer(
@@ -44,7 +23,7 @@ model = SentenceTransformer(
     )
 )
 
-# 3. Load a dataset to finetune on
+# 2. Load a dataset to finetune on
 data = FirebaseDataset("qa.json", train_ratio=0.7, test_ratio=0.2, eval_ratio=0.1)
 print(data.size)
 
@@ -53,28 +32,27 @@ eval_data = data["eval"]
 test_data = data["test"]
 
 train_dataset = Dataset.from_dict({
-    "anchor": list(map(str, train_data.anchors)), 
-    "positive/negative": list(map(str, train_data.pos_neg)),
-    "label": list(map(int, train_data.labels)),
+    "anchor": train_data.anchors, 
+    "positive/negative": train_data.pos_neg,
+    "label": train_data.labels,
 })
 
 test_dataset = Dataset.from_dict({
-    "anchor": list(map(str, test_data.anchors)), 
-    "positive/negative": list(map(str, test_data.pos_neg)),
-    "label": list(map(int, test_data.labels)),
+    "anchor": test_data.anchors, 
+    "positive/negative": test_data.pos_neg,
+    "label": test_data.labels,
 })
 
 eval_dataset = Dataset.from_dict({
-    "anchor": list(map(str, eval_data.anchors)), 
-    "positive/negative": list(map(str, eval_data.pos_neg)),
-    "label": list(map(int, eval_data.labels)),
+    "anchor": eval_data.anchors, 
+    "positive/negative": eval_data.pos_neg,
+    "label": eval_data.labels,
 })
 
-
-# 4. Define a loss function
+# 3. Define a loss function
 loss = OnlineContrastiveLoss(model)
 
-# 5. (Optional) Specify training argumentsclass CustomLoggingCallback(TrainerCallback):
+# 4. (Optional) Specify training arguments:
 args = SentenceTransformerTrainingArguments(
     # Required parameter:
     output_dir="models/all-mpnet-base-v2-qa",
@@ -97,7 +75,7 @@ args = SentenceTransformerTrainingArguments(
     run_name="all-mpnet-base-v2-qa",  # Will be used in W&B if `wandb` is installed
 )
 
-# 6. (Optional) Create an evaluator & evaluate the base model
+# 5. (Optional) Create an evaluator & evaluate the base model
 dev_evaluator = BinaryClassificationEvaluator(
     sentences1=list(eval_dataset["anchor"]),
     sentences2=list(eval_dataset["positive/negative"]), 
@@ -105,7 +83,27 @@ dev_evaluator = BinaryClassificationEvaluator(
 )
 before_trainng_results = dev_evaluator(model)
 
-# 7. Create a trainer & train
+# Custom logging callback
+train_losses = []
+eval_losses = []
+epochs = []
+class CustomLoggingCallback(TrainerCallback):
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if logs is not None:
+            epoch = logs.get('epoch')
+            if epoch not in epochs:
+                epochs.append(epoch)
+            # print(f"Step: {state.global_step}, Logs: {logs}")  # Print all logs
+            loss = logs.get('loss')
+            if loss is not None:
+                train_losses.append(loss)
+            
+            eval_loss = logs.get('eval_loss')
+            if eval_loss is not None:
+                eval_losses.append(eval_loss)
+            # print(f"Training Loss: {loss}, Evaluation Loss: {eval_loss}")
+
+# 6. Create a trainer & train
 trainer = SentenceTransformerTrainer(
     model=model,
     args=args,
@@ -142,5 +140,5 @@ plt.grid()
 # Show the plot
 plt.show()
 
-# 8. Save the trained model
+# 7. Save the trained model
 model.save_pretrained("models/all-mpnet-base-v2-qa/final")

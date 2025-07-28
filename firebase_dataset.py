@@ -22,7 +22,6 @@ class FirebaseDataset:
         self.test_data = None
         self.eval_data = None
 
-        # Perform the split immediately upon initialization
         self.train_test_eval_split(train_ratio, test_ratio, eval_ratio)
 
     def load_data(self):
@@ -37,13 +36,11 @@ class FirebaseDataset:
     def train_test_eval_split(self, train_ratio, test_ratio, eval_ratio):
         """Load data and split the dataset into train, test, and eval sets."""
         total_ratio = train_ratio + test_ratio + eval_ratio
-        if not (0.99 <= total_ratio <= 1.01):
+        if not (0.99 <= total_ratio <= 1.01): # Floats are a little weird
             raise ValueError("Ratios must sum to 1.0")
 
-        # Load the data
         data = self.load_data()
         
-        # Prepare the data for processing
         anchors = []
         pos_neg = []
         labels = []
